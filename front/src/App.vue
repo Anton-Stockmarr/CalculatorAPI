@@ -1,14 +1,15 @@
 <template>
   <div id="app">
     <div id="input-fields">
-      <input type="number" v-model="val1">
+      <input type="text" v-model="val1">
       <select v-model="op">
         <option value="add">+</option>
         <option value="sub">-</option>
         <option value="mul">*</option>
         <option value="div">/</option>
+        <option value="randomOperation">Operation that does not exist</option>
       </select>
-      <input type="number" v-model="val2">
+      <input type="text" v-model="val2">
     </div>
     <button @click="calc()">Calculate</button>
     <div id="result">{{result}}</div>
@@ -30,13 +31,25 @@ export default {
   },
   methods: {
     calc() {
-      const url = 'http://localhost:3000/'+this.op + '?val1='+this.val1+"&val2="+this.val2;
-      axios.get(url)
-        .then(response => this.result = response.data)
-        .catch(function(err){
-          console.log(err);
-          this.result = "There was an error";
-        });
+      if (this.validateInput()) {
+        axios.get(`http://localhost:3000/${this.op}?val1=${this.val1}&val2=${this.val2}`)
+          .then(response => this.result = response.data)
+          .catch(err => this.result = err);
+      }
+    },
+    validateInput() {
+      let regex = /^[\d]{1,20}(\.[\d]*)?$/;
+      if (this.val1 === '' || this.val2 === '') {
+        this.result = 'empty input';
+        return false;
+      }
+      else if (!this.val1.match(regex) || !this.val2.match(regex)){
+        this.result = 'You can only enter digits';
+        return false;
+      }
+      else {
+        return true;
+      }
     }
   }
 }
@@ -61,7 +74,7 @@ export default {
   width: 100%;
 }
 
-input[type="number"] {
+input[type="text"] {
   padding: 0;
   margin: 0;
   width: calc(100% - 4px);

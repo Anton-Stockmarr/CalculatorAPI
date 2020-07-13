@@ -13,30 +13,53 @@ app.use(function(req, res, next) {
 
 app.listen(port, () => console.log(`Calculator listening at http://localhost:${port}`));
 
-app.get('/add', (req, res) => {
-    let x = Number(req.query.val1);
-    let y = Number(req.query.val2);
-    res.send((x+y).toString());
-    }
-);
+const operations = {
+    "add" : (a,b) => a+b,
+    "sub" : (a,b) => a-b,
+    "mul" : (a,b) => a*b,
+    "div" : (a,b) => a/b
+}
 
-app.get('/sub', (req, res) => {
-    let x = Number(req.query.val1);
-    let y = Number(req.query.val2);
-    res.send((x-y).toString());
-    }
-);
+function checkInput(a,b) {
+    let error = {
+        status: true,
+        message: ''
+    };
+    return error;
+}
 
-app.get('/mul', (req, res) => {
-    let x = Number(req.query.val1);
-    let y = Number(req.query.val2);
-    res.send((x*y).toString());
+app.get('/:operation', (req,res,next) => {
+    let error;
+    let op = req.params.operation;
+    if (!(op in operations)) {
+        error = new Error(`operation ${op} is not supported`);
+        error.statusCode = 400;
+        return next(error);
     }
-);
 
-app.get('/div', (req, res) => {
-    let x = Number(req.query.val1);
-    let y = Number(req.query.val2);
-    res.send((x/y).toString());
+    let a = req.query.val1;
+    let b = req.query.val2;
+    
+    let regex = /^[\d]{1,20}(\.[\d]*)?$/;
+    if (a === '' || b === '') {
+        error = new Error('Empty input');
+        error.statusCode = 400;
+        return next(error);
     }
-);
+    else if (!a.match(regex) || !b.match(regex)){
+        error = new Error('Incorrect input structure');
+        error.statusCode = 400;
+        return next(error);
+    }
+
+
+    try {
+        a = Number(req.query.val1);
+        b = Number(req.query.val2);
+    } catch(err) {
+        error = new Error(err);
+        error.statusCode = 400;
+        return next(error);
+    }
+    res.send(operations[op](a,b).toString());
+});
